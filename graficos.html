@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard de Ventas Anuales</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      padding: 30px;
+      margin: 0;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #222;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="number"] {
+      width: 70px;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    select, button {
+      grid-column: span 2;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    select {
+      background: #f0f0f0;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .acciones {
+      display: flex;
+      gap: 10px;
+      grid-column: span 3;
+      justify-content: center;
+    }
+
+    canvas {
+      margin-top: 30px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📈 Dashboard de Ventas Anuales</h2>
+
+  <form id="ventasForm">
+    <!-- Meses -->
+    <label>Enero: <input type="number" name="Enero" min="0" required></label>
+    <label>Febrero: <input type="number" name="Febrero" min="0" required></label>
+    <label>Marzo: <input type="number" name="Marzo" min="0" required></label>
+    <label>Abril: <input type="number" name="Abril" min="0" required></label>
+    <label>Mayo: <input type="number" name="Mayo" min="0" required></label>
+    <label>Junio: <input type="number" name="Junio" min="0" required></label>
+    <label>Julio: <input type="number" name="Julio" min="0" required></label>
+    <label>Agosto: <input type="number" name="Agosto" min="0" required></label>
+    <label>Septiembre: <input type="number" name="Septiembre" min="0" required></label>
+    <label>Octubre: <input type="number" name="Octubre" min="0" required></label>
+    <label>Noviembre: <input type="number" name="Noviembre" min="0" required></label>
+    <label>Diciembre: <input type="number" name="Diciembre" min="0" required></label>
+
+    <select id="tipoGrafico" required>
+      <option value="bar">Gráfico de Barras</option>
+      <option value="line">Gráfico de Líneas</option>
+      <option value="pie">Gráfico Circular</option>
+    </select>
+
+    <div class="acciones">
+      <button type="submit">🎨 Generar Gráfico</button>
+      <button type="button" id="guardar">💾 Guardar Datos</button>
+      <button type="button" id="limpiar">🗑️ Limpiar</button>
+    </div>
+  </form>
+
+  <canvas id="graficoVentas" height="100"></canvas>
+
+  <script>
+    const form = document.getElementById('ventasForm');
+    const ctx = document.getElementById('graficoVentas').getContext('2d');
+    let chart;
+
+    // Colores aleatorios para los datos
+    function generarColores(n) {
+      return Array.from({ length: n }, () =>
+        rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 0.7)
+      );
+    }
+
+    // Cargar datos si existen
+    window.onload = () => {
+      const saved = localStorage.getItem("ventasData");
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.entries(data).forEach(([key, val]) => {
+          const input = document.querySelector([name="${key}"]);
+          if (input) input.value = val;
+        });
+      }
+    };
+
+    // Evento principal
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const meses = [];
+      const ventas = [];
+
+      for (let [mes, valor] of formData.entries()) {
+        if (!mes || mes === "tipoGrafico") continue;
+        meses.push(mes);
+        ventas.push(Number(valor));
+      }
+
+      const tipoGrafico = document.getElementById('tipoGrafico').value;
+      const colores = generarColores(meses.length);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: tipoGrafico,
+        data: {
+          labels: meses,
+          datasets: [{
+            label: 'Ventas del Año',
+            data: ventas,
+            backgroundColor: tipoGrafico === 'pie' ? colores : 'rgba(54, 162, 235, 0.6)',
+            borderColor: tipoGrafico === 'pie' ? '#fff' : 'rgba(0,0,0,0.2)',
+            borderWidth: 1,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          animation: {
+            duration: 1000,
+            easing: 'easeOutBounce'
+          },
+          responsive: true,
+          scales: tipoGrafico !== 'pie' ? {
+            y: { beginAtZero: true }
+          } : {}
+        }
+      });
+    });
+
+    // Guardar en localStorage
+    document.getElementById("guardar").addEventListener("click", () => {
+      const data = {};
+      new FormData(form).forEach((valor, clave) => {
+        if (clave !== "tipoGrafico") data[clave] = valor;
+      });
+      localStorage.setItem("ventasData", JSON.stringify(data));
+      alert("✅ Datos guardados en el navegador.");
+    });
+
+    // Limpiar
+    document.getElementById("limpiar").addEventListener("click", () => {
+      form.reset();
+      localStorage.removeItem("ventasData");
+      if (chart) chart.destroy();
+    });
+  </script>
+
+</body>
+</html>
