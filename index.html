@@ -37,8 +37,8 @@
       gap: 10px;
     }
 
-    input[type="number"] {
-      width: 70px;
+    input[type="number"], input[type="text"] {
+      width: 100px;
       padding: 4px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -86,9 +86,11 @@
 </head>
 <body>
 
-  <h2>📈 Dashboard de Ventas Anuales</h2>
+  <h2> Dashboard de Ventas Anuales</h2>
 
   <form id="ventasForm">
+    <label>Año: <input type="number" name="Año" id="anio" min="1900" max="2100" required></label>
+
     <!-- Meses -->
     <label>Enero: <input type="number" name="Enero" min="0" required></label>
     <label>Febrero: <input type="number" name="Febrero" min="0" required></label>
@@ -110,9 +112,9 @@
     </select>
 
     <div class="acciones">
-      <button type="submit">🎨 Generar Gráfico</button>
-      <button type="button" id="guardar">💾 Guardar Datos</button>
-      <button type="button" id="limpiar">🗑️ Limpiar</button>
+      <button type="submit"> Generar Gráfico</button>
+      <button type="button" id="guardar"> Guardar Datos</button>
+      <button type="button" id="limpiar"> Limpiar</button>
     </div>
   </form>
 
@@ -123,34 +125,33 @@
     const ctx = document.getElementById('graficoVentas').getContext('2d');
     let chart;
 
-    // Colores aleatorios para los datos
     function generarColores(n) {
       return Array.from({ length: n }, () =>
-        rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 0.7)
+        `rgba(${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, ${Math.floor(Math.random()*255)}, 0.7)`
       );
     }
 
-    // Cargar datos si existen
+    // Cargar datos guardados
     window.onload = () => {
       const saved = localStorage.getItem("ventasData");
       if (saved) {
         const data = JSON.parse(saved);
         Object.entries(data).forEach(([key, val]) => {
-          const input = document.querySelector([name="${key}"]);
+          const input = document.querySelector(`[name="${key}"]`);
           if (input) input.value = val;
         });
       }
     };
 
-    // Evento principal
     form.addEventListener('submit', function(e) {
       e.preventDefault();
       const formData = new FormData(form);
       const meses = [];
       const ventas = [];
+      const anio = formData.get("Año") || "Año no especificado";
 
       for (let [mes, valor] of formData.entries()) {
-        if (!mes || mes === "tipoGrafico") continue;
+        if (!mes || mes === "tipoGrafico" || mes === "Año") continue;
         meses.push(mes);
         ventas.push(Number(valor));
       }
@@ -165,7 +166,7 @@
         data: {
           labels: meses,
           datasets: [{
-            label: 'Ventas del Año',
+            label: `Ventas del Año ${anio}`,
             data: ventas,
             backgroundColor: tipoGrafico === 'pie' ? colores : 'rgba(54, 162, 235, 0.6)',
             borderColor: tipoGrafico === 'pie' ? '#fff' : 'rgba(0,0,0,0.2)',
@@ -175,6 +176,13 @@
           }]
         },
         options: {
+          plugins: {
+            title: {
+              display: true,
+              text: ` Ventas del Año ${anio}`,
+              font: { size: 18 }
+            }
+          },
           animation: {
             duration: 1000,
             easing: 'easeOutBounce'
@@ -187,17 +195,15 @@
       });
     });
 
-    // Guardar en localStorage
     document.getElementById("guardar").addEventListener("click", () => {
       const data = {};
       new FormData(form).forEach((valor, clave) => {
         if (clave !== "tipoGrafico") data[clave] = valor;
       });
       localStorage.setItem("ventasData", JSON.stringify(data));
-      alert("✅ Datos guardados en el navegador.");
+      alert(" Datos guardados en el navegador.");
     });
 
-    // Limpiar
     document.getElementById("limpiar").addEventListener("click", () => {
       form.reset();
       localStorage.removeItem("ventasData");
@@ -207,3 +213,4 @@
 
 </body>
 </html>
+
